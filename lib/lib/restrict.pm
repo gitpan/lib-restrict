@@ -2,7 +2,7 @@ package lib::restrict;
 
 use strict;
 use warnings;
-our $VERSION = '0.0.1';
+our $VERSION = '0.0.2';
 
 use base 'lib';
 
@@ -27,7 +27,7 @@ sub import {
     }
     
     for (@_) {
-	    my $path = $_; # we'll be modifying it, so break the alias
+	    my $path = $_; # we'll be modifying it, so break the alias, is there an echo in here :)
 	    $path    = lib::_nativize($path);
 	    
         if(keys %uid) {
@@ -78,32 +78,32 @@ lib::restrict useage and functionality is the same as 'use L<lib>' and 'no L<lib
 
 =head1 RESTRICTING WHAT GOES INTO @INC
 
-If the last item passed to use lib is all digits or an array ref of items 
+If the last item passed to use lib::restrict is all digits or an array ref of items 
 that are all digits then only paths passed that are owned by those uids are used.
 
     # add /foo and /bar only if owned by root
-    use lib '/foo', '/bar', 0;
+    use lib::restrict '/foo', '/bar', 0;
 
 or
 
     # add /foo and /bar only if owned by root, effective uid, or real uid
-    use lib '/foo', '/bar', [0, $>, $<];
+    use lib::restrict '/foo', '/bar', [0, $>, $<];
 
 This means if you are adding a directory that is all digits it has to go somewhere besides the end.
 
     # add the path 123 if owned by root *not* add the paths 123 and 0
-    use lib '123', '0';
+    use lib::restrict '123', '0';
 
 This is not true if its the only argument:
  
-    use lib '123'; # treats 123 as a path not a uid
+    use lib::restrict '123'; # treats 123 as a path not a uid
 
 
 Any items that are non numeric are simply ignored:
 
-    use lib '/foo', '/bar', '/baz'; # adds those 3 paths
+    use lib::restrict '/foo', '/bar', '/baz'; # adds those 3 paths
 
-    use lib '/foo', '/bar', [qw( /baz 0 123 /wop)]; # adds /foo and /bar if its owned by root or uid 123
+    use lib::restrict '/foo', '/bar', [qw( /baz 0 123 /wop)]; # adds /foo and /bar if its owned by root or uid 123
 
 In addition the last item can be a code reference that accepts tha filename as 
 its only argument and returns true if its ok to add and false to not add it.
