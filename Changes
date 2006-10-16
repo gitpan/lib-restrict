@@ -1,5 +1,8 @@
 Revision history for Perl extension lib::restrict.
 
+0.0.3  Mon Oct 16 18:33:45 2006
+    - minor fixups
+
 0.0.2  Sat Oct 14 11:41:56
     - fixed POD examples use of 'use lib' where it should have been 'use lib::restrict', doh!
 

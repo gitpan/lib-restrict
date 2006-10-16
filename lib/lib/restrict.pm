@@ -2,7 +2,7 @@ package lib::restrict;
 
 use strict;
 use warnings;
-our $VERSION = '0.0.2';
+our $VERSION = '0.0.3';
 
 use base 'lib';
 
@@ -30,14 +30,12 @@ sub import {
 	    my $path = $_; # we'll be modifying it, so break the alias, is there an echo in here :)
 	    $path    = lib::_nativize($path);
 	    
-        if(keys %uid) {
-    	    if( !exists $uid{ _get_owner($path) } || (ref $chk eq 'CODE' && !$chk->($_)) ) {
-    	        if( !$ENV{'lib::restrict-quiet'} ) {
-    	            require Carp;
-    	            Carp::carp('Parameter to use lib::restrict is not owned by allowed uid');
-	            }
-    	        @_ = grep { !m/^$path$/ } @_;    	
+	    if( (keys %uid && !exists $uid{ _get_owner($path) }) || (ref $chk eq 'CODE' && !$chk->($_)) ) {
+	        if( !$ENV{'lib::restrict-quiet'} ) {
+	            require Carp;
+	            Carp::carp('Parameter to use lib::restrict is not owned by allowed uid');
             }
+	        @_ = grep { !m/^$path$/ } @_;    	
         }
     }
     
