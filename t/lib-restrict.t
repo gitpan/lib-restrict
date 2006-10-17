@@ -1,8 +1,8 @@
-use Test::More tests => 19; 
+use Test::More tests => 35; 
 
 $ENV{'lib::restrict-quiet'} = 1; 
 
-my $skip = 17;
+my $skip = 33;
 my $uuid = 99;
 my @dirs = qw(
     lib_restrict_nouid       lib_restrict_root        
@@ -50,6 +50,31 @@ SKIP: {
     
     eval q{ no lib::restrict 'lib_restrict_array_bad_x'; };
     ok($INC[0] eq 'lib_restrict_array_bad_y', 'no lib::restrict');
+    
+    BEGIN { $ENV{'lib::restrict-!-d_ok_in'} = ['lib_restrict_nouid']; }
+    use_ok('lib::restrict', 'lib_restrict_nouid/foo');
+    ok($INC[0] eq 'lib_restrict_nouid/foo', '!-d parent exists nouid');
+    
+    use_ok('lib::restrict', 'lib_restrict_nouid/bar', 0);
+    ok($INC[0] eq 'lib_restrict_nouid/bar', '!-d parent exists uid');
+    
+    use_ok('lib::restrict', 'lib_restrict_nouid/baz', sub { return 1; });
+    ok($INC[0] eq 'lib_restrict_nouid/baz', '!-d parent exists code ref true');
+    
+    use_ok('lib::restrict', 'lib_restrict_nouid/wop', sub { return 0; });
+    ok($INC[0] eq 'lib_restrict_nouid/wop', '!-d parent exists code ref false');
+
+    use_ok('lib::restrict', 'lib_restrict_no/foo');
+    ok($INC[0] eq 'lib_restrict_no/foo', '!-d parent not exists nouid');
+    
+    use_ok('lib::restrict', 'lib_restrict_no/bar', 0);
+    ok($INC[0] ne 'lib_restrict_no/bar', '!-d parent not exists uid');
+    
+    use_ok('lib::restrict', 'lib_restrict_no/baz', sub { return 1; });
+    ok($INC[0] eq 'lib_restrict_no/baz', '!-d parent not exists code ref true');
+    
+    use_ok('lib::restrict', 'lib_restrict_no/wop', sub { return 0; });
+    ok($INC[0] ne 'lib_restrict_no/wop', '!-d parent not exists code ref false');
 }
 
 END {

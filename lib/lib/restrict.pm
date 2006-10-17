@@ -2,7 +2,7 @@ package lib::restrict;
 
 use strict;
 use warnings;
-our $VERSION = '0.0.3';
+our $VERSION = '0.0.4';
 
 use base 'lib';
 
@@ -10,6 +10,7 @@ sub import {
     shift;
     
     my %uid;
+    my %okd;
     my $chk = '';
     if(defined $_[-1] && (ref $_[-1] eq 'ARRAY' || $_[-1] =~ m/^\d+$/ || ref $_[-1] eq 'CODE')) {
         if(ref $_[-1]) {
@@ -30,10 +31,32 @@ sub import {
 	    my $path = $_; # we'll be modifying it, so break the alias, is there an echo in here :)
 	    $path    = lib::_nativize($path);
 	    
+	    if(!-d $path && ref $ENV{'lib::restrict-!-d_ok_in'} eq 'ARRAY') {
+	        my $ok = 0;
+	        require File::Spec;
+	        require File::Basename;
+	        
+	        my $absolute = File::Spec->file_name_is_absolute($path) ? $path : File::Spec->rel2abs( $path );
+	        my $pathless = File::Basename::dirname($absolute);
+
+	        if(File::Spec->file_name_is_absolute($absolute)) {
+    	        for my $base (@{ $ENV{'lib::restrict-!-d_ok_in'} }) {
+                    $base =  File::Spec->rel2abs($base) if !File::Spec->file_name_is_absolute($base);
+    	            my $grow = ''; # IE '/'
+    	            for my $part (File::Spec->splitdir($base)) {
+    	                $grow = File::Spec->catdir($grow, $part);
+    	                $ok = 1 if $pathless eq $grow;
+    	            }
+    	        } 
+    	        $okd{ $_ } = 1; 
+    	        next if $ok;
+            }
+	    }
+
 	    if( (keys %uid && !exists $uid{ _get_owner($path) }) || (ref $chk eq 'CODE' && !$chk->($_)) ) {
 	        if( !$ENV{'lib::restrict-quiet'} ) {
 	            require Carp;
-	            Carp::carp('Parameter to use lib::restrict is not owned by allowed uid');
+	            Carp::carp('Parameter to use lib::restrict is not allowed');
             }
 	        @_ = grep { !m/^$path$/ } @_;    	
         }
@@ -43,7 +66,7 @@ sub import {
     @lib::restrict::ORIG_INC = @lib::ORIG_INC;
     
     if(keys %uid) {
-        @INC = grep { exists $uid{_get_owner($_)} } @INC; # uninit value ??
+        @INC = grep { exists $uid{_get_owner($_)} || exists $okd{ $_ } } @INC; # uninit value ??
     }
 
     return;
@@ -96,7 +119,6 @@ This is not true if its the only argument:
  
     use lib::restrict '123'; # treats 123 as a path not a uid
 
-
 Any items that are non numeric are simply ignored:
 
     use lib::restrict '/foo', '/bar', '/baz'; # adds those 3 paths
@@ -105,6 +127,23 @@ Any items that are non numeric are simply ignored:
 
 In addition the last item can be a code reference that accepts tha filename as 
 its only argument and returns true if its ok to add and false to not add it.
+
+=head1 CONTROLLING BEHAVIOR VIA %ENV
+
+If true, $ENV{'lib::restrict-quiet'}, stiffles the carp when a path is denied.
+
+Set $ENV{'lib::restrict-!-d_ok_in'} to an array ref of absolute paths (will be made absolute if relative). 
+Any paths passed to lib::restrict that do not exist but whose parent is in that list will be allowed and the uid/code ref check ignored.
+
+In other words if you 
+
+    local $ENV{'lib::restrict-!-d_ok_in'} = ['/foo'];
+    # assuming neither exists yet
+    use lib::restrict qw(/foo/bar /foo/baz/wop, $restriction);
+
+/foo/bar made it because /foo, its parent is in the list.
+
+/foo/baz/wop did not because it parent, /foo/baz, is not in the list
 
 =head1 SEE ALSO
 
