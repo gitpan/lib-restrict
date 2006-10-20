@@ -2,7 +2,7 @@ package lib::restrict;
 
 use strict;
 use warnings;
-our $VERSION = '0.0.4';
+our $VERSION = '0.0.5';
 
 use base 'lib';
 
@@ -29,7 +29,9 @@ sub import {
     
     for (@_) {
 	    my $path = $_; # we'll be modifying it, so break the alias, is there an echo in here :)
-	    $path    = lib::_nativize($path);
+	    eval {
+	        $path    = lib::_nativize($path);
+	    }; # we eval since older lib.pm's don't have this
 	    
 	    if(!-d $path && ref $ENV{'lib::restrict-!-d_ok_in'} eq 'ARRAY') {
 	        my $ok = 0;

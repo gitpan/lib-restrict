@@ -1,5 +1,8 @@
 Revision history for Perl extension lib::restrict.
 
+0.0.5  Fri Oct 20 15:00:52 2006
+	- fixed up assumption of "latest" lib
+	
 0.0.4  Tue Oct 17 10:00:50 2006
     - Added $ENV{'lib::restrict-!-d_ok_in'} support
 
